@@ -8,18 +8,21 @@ public class PlayerController : MonoBehaviour
     public float speed = 2f;
     public bool grounded;
     public float jumpPower = 6.5f;
-    
-    
+
     private Rigidbody2D rb2d;
     private Animator anim;
+    private SpriteRenderer spr;
+    
     private bool jump;
     private bool doubleJump;
-
+    private bool movement = true;
+    
     // Start is called before the first frame update
     void Start()
     {
         rb2d = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        spr = GetComponent<SpriteRenderer>();
     }
 
     // Update is called once per frame
@@ -28,12 +31,13 @@ public class PlayerController : MonoBehaviour
         //Se relacionan las variables Speed y Grounded de animacion con el código
         anim.SetFloat("Speed", Mathf.Abs(rb2d.velocity.x));
         anim.SetBool("Grounded", grounded);
-        
+
         //salto en el aire si no has saltado antes
         if (grounded)
         {
             doubleJump = true;
         }
+
         //salto normal
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
@@ -41,14 +45,15 @@ public class PlayerController : MonoBehaviour
             {
                 jump = true;
                 doubleJump = true; //bool para doble salto
-            }else if (doubleJump)
+            }
+            else if (doubleJump)
             {
                 jump = true;
                 doubleJump = false;
             }
-            
         }
     }
+
     void FixedUpdate()
     {
         Vector3 fixedVelocity = rb2d.velocity;
@@ -58,8 +63,9 @@ public class PlayerController : MonoBehaviour
         {
             rb2d.velocity = fixedVelocity;
         }
-        
+
         float h = Input.GetAxis("Horizontal");
+        if (!movement) h = 0;
         
         rb2d.AddForce(Vector2.right * speed * h);
 
@@ -69,12 +75,12 @@ public class PlayerController : MonoBehaviour
 
         if (h < -0.1f)
         {
-            transform.localScale = new Vector3(-1f,1f, 1f);
+            transform.localScale = new Vector3(-1f, 1f, 1f);
         }
 
         if (h > 0.1f)
         {
-            transform.localScale = new Vector3(1f,1f, 1f);
+            transform.localScale = new Vector3(1f, 1f, 1f);
         }
 
         if (jump)
@@ -83,11 +89,34 @@ public class PlayerController : MonoBehaviour
             rb2d.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse);
             jump = false;
         }
-
-        
     }
+
     void OnBecameInvisible()
     {
-        transform.position = new Vector3(0,0,0);
+        transform.position = new Vector3(0, 0, 0);
+    }
+
+    public void EnemyJump()
+    {
+        jump = true;
+    }
+
+    public void EnemyKnockBack(float enemyPosX)
+    {
+        jump = true;
+
+        float side = Mathf.Sign(enemyPosX - transform.position.x);
+        rb2d.AddForce(Vector2.left * side * jumpPower, ForceMode2D.Impulse);
+        
+        movement = false;
+        Invoke("EnableMovement", 0.5f);
+        Color customColor = new Color(255/255f,106/255f,0/255f);
+        spr.color = customColor;
+    }
+
+    void EnableMovement()
+    {
+        movement = true;
+        spr.color = Color.white;
     }
 }
